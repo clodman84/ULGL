@@ -1,0 +1,16 @@
+dependencies:
+  clodman84/ULGL:
+    dependencies: []
+    source:
+      path: /home/clodman84/Documents/Programming/ULGL
+      type: local
+    version: '*'
+  idf:
+    source:
+      type: idf
+    version: 5.4.0
+direct_dependencies:
+- clodman84/ULGL
+manifest_hash: a3a9d278503b7d3b217fd2c0ab79e385c015e6be339ee46692e8012306e5cb87
+target: esp32
+version: 2.0.0
