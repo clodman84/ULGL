@@ -11,7 +11,7 @@
 #include "freertos/idf_additions.h"
 #include "portmacro.h"
 
-#include "oled_esp_lcd.h"
+#include "ssd1306_oled.h"
 
 
 // make sure the pins are correctly connected here

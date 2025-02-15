@@ -1,6 +1,5 @@
-#include "esp_lcd_types.h"
 #include "ULGL.h"
-#include "oled_esp_lcd.h"
+#include "ssd1306_oled.h"
 #include <stdint.h>
 
 uint8_t screen[1024];
