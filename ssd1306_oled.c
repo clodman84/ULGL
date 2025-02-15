@@ -11,11 +11,10 @@
 #include "freertos/idf_additions.h"
 #include "portmacro.h"
 
-#include "ssd1306_oled.h"
-
+#include "oled_esp_lcd.h"
 
 // make sure the pins are correctly connected here
-#define I2C_BUS_PORT  0
+#define I2C_BUS_PORT          0
 #define LCD_PIXEL_CLOCK_HZ    (400 * 1000)
 #define PIN_NUM_SDA           21
 #define PIN_NUM_SCL           22
@@ -23,12 +22,12 @@
 #define I2C_HW_ADDR           0x3C
 
 // Resolution 
-#define LCD_H_RES              128
-#define LCD_V_RES              64
+#define LCD_H_RES             128
+#define LCD_V_RES             64
 
 // Bit number used to represent command and parameter
-#define LCD_CMD_BITS           8
-#define LCD_PARAM_BITS         8
+#define LCD_CMD_BITS          8
+#define LCD_PARAM_BITS        8
 
 // for reconfiguring panel options
 #define SSD1306_CMD_SET_MEMORY_ADDR_MODE  0x20
@@ -78,19 +77,14 @@ esp_lcd_panel_handle_t install_panel_driver(esp_lcd_panel_io_handle_t io_handle)
 	return panel;
 }
 
-esp_lcd_panel_handle_t initialise_oled(void)
-{
+esp_lcd_panel_handle_t initialise_oled(void){
 	i2c_master_bus_handle_t i2c_bus = create_i2c_bus();
 	esp_lcd_panel_io_handle_t io_handle = allocate_i2c_device_handle(i2c_bus);
 	esp_lcd_panel_handle_t panel = install_panel_driver(io_handle);
 
-	// performing some random panel operations
-	
 	ESP_LOGI(TAG, "Initialising the panel");
 
-	// NO MATTER WHAT YOU NEED TO DO THESE THREE THINGS BEFORE USING THE DISPLAY idk why the docs don't mention this!!! 
-	// for some other displays this process is even lengthier, read the docs
-	ESP_ERROR_CHECK(esp_lcd_panel_reset(panel)); // this has to be called before attempting to init the panel
+	ESP_ERROR_CHECK(esp_lcd_panel_reset(panel));
 	ESP_ERROR_CHECK(esp_lcd_panel_init(panel));
 	ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel, true));
 
@@ -105,17 +99,16 @@ esp_lcd_panel_handle_t initialise_oled(void)
 
 void verify_memory_address_mode(esp_lcd_panel_handle_t panel, uint8_t *screen){
 	uint8_t* start = screen;
-	for (int i = 0; i < 64; i++){
-		for (int j = 0; j < 16; j++){
+	for (int i = 0; i < LCD_V_RES; i++){
+		for (int j = 0; j < LCD_H_RES/8; j++){
 			memset(start, 0xFF, 1);
 			start += 1;
-	 		esp_lcd_panel_draw_bitmap(panel, 0, 0, 128, 64, screen);
+	 		esp_lcd_panel_draw_bitmap(panel, 0, 0, LCD_H_RES, LCD_V_RES, screen);
 			vTaskDelay(23 / portTICK_PERIOD_MS);	
 		}
 	}
 }
 
 void display_bitmap(esp_lcd_panel_handle_t panel, uint8_t *bitmap){
-	esp_lcd_panel_draw_bitmap(panel, 0, 0, 128, 64, bitmap);
+	esp_lcd_panel_draw_bitmap(panel, 0, 0, LCD_H_RES, LCD_V_RES, bitmap);
 }
-

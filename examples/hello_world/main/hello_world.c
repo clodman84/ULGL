@@ -6,7 +6,7 @@ uint8_t screen[1024];
 
 void app_main(void) {
     esp_lcd_panel_handle_t panel = initialise_oled();
-    draw_text("Hello World", 3, screen);
+    draw_text("Hello", 34, 19, screen);
+    draw_text("World", 51, 43, screen);
     display_bitmap(panel, screen);
 }
-
