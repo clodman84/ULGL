@@ -4,6 +4,8 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <stdbool.h>
 #include "ULGL.h"
 #include "images.h"
 
@@ -11,17 +13,20 @@
 #define LCD_H_RES             128
 #define LCD_V_RES             64
 
+
+uint8_t _unwrap(uint8_t *position, int block_x){
+	uint8_t temp1 = (*position     & (0b11 << (2*(block_x%4)))) >> (2*(block_x%4));
+	uint8_t temp2 = (*(position+1) & (0b11 << (2*(block_x%4)))) >> (2*(block_x%4));
+	return  (temp1 << 2) | temp2;
+}
+
+
 void print_bitmap_in_horizontal_mode(uint8_t *bitmap, size_t sizeof_bitmap, int width){
 	int height = sizeof_bitmap / width;
-	for (int i = 0; i < 4*height; i++){
+	for (int block_x = 0; block_x < 4*height; block_x++){
 		for (int j = 0; j < width/2; j++){
-			uint8_t *position = bitmap + (i/4)*width + 2*j;
-			uint8_t unwrap(uint8_t *position){
-				uint8_t temp1 = (*position     & (0b11 << (2*(i%4)))) >> (2*(i%4));
-				uint8_t temp2 = (*(position+1) & (0b11 << (2*(i%4)))) >> (2*(i%4));
-				return  (temp1 << 2) | temp2;
-			}
-			switch (unwrap(position)){
+			uint8_t *position = bitmap + (block_x/4)*width + 2*j;
+			switch (_unwrap(position, block_x)){
 				case 0b0000: printf(" "); break;
 				case 0b0001: printf("\xE2\x96\x9D"); break; // U+259D QUADRANT UPPER RIGHT
 				case 0b0010: printf("\xE2\x96\x97"); break; // U+2597 QUADRANT LOWER RIGHT
@@ -44,40 +49,42 @@ void print_bitmap_in_horizontal_mode(uint8_t *bitmap, size_t sizeof_bitmap, int 
 	}
 }
 
+
 void draw_bitmap(uint8_t *bitmap, size_t sizeof_bitmap, int width, int x, int y, uint8_t *screen, bool transparent){    // (x,y) is position of top left corner
 	int height = sizeof_bitmap / width;
 	int bit = y % 8;
 	if (bit == 0){
-	    for (int i = 0; i < height; i++){
+		for (int i = 0; i < height; i++){
 		    memcpy(screen + (i+y/8)*LCD_H_RES + x, bitmap + i*width, width);
 		}
 	} else {
-	    uint8_t *bitmap_new = calloc(width*(height+2), 1);
-	    memcpy(bitmap_new+width, bitmap, width*height);
-	    for (int i = 0; i < height+1; i++){
-	    	for (int j = 0; j < width; j++){
-	    		*(bitmap_new + i*width + j) = (*(bitmap_new + i*width + j) >> (8-bit)) | (*(bitmap_new + (i+1)*width + j) << bit);
-	    	}
-	    }
-	    if (transparent){
-	    	for (int i = 0; i < height+1; i++){
-	    		for (int j = 0; j < width; j++){
-	    			*(bitmap_new + i*width + j) |= *(screen + (i+y/8)*LCD_H_RES + x + j);
-	    		}
-	    	}
-	    } else {
-	    	for (int j = 0; j < width; j++){
-	    		*(bitmap_new + j) |= *(screen + (y/8)*LCD_H_RES + x + j) & (0b11111111 >> (8-bit));
-	    	}
-	    	for (int j = 0; j < width; j++){
-	    		*(bitmap_new + height*width + j) |= *(screen + (height+y/8)*LCD_H_RES + x + j) & (0b11111111 << bit);
-	    	}
-	    }
-	    for (int i = 0; i < height+1; i++){
-	    	memcpy(screen + (i+y/8)*LCD_H_RES + x, bitmap_new + i*width, width);
-	    }
+		uint8_t *bitmap_new = calloc(width*(height+2), 1);
+		memcpy(bitmap_new+width, bitmap, width*height);
+		for (int i = 0; i < height+1; i++){
+			for (int j = 0; j < width; j++){
+				*(bitmap_new + i*width + j) = (*(bitmap_new + i*width + j) >> (8-bit)) | (*(bitmap_new + (i+1)*width + j) << bit);
+			}
+		}
+		if (transparent){
+			for (int i = 0; i < height+1; i++){
+				for (int j = 0; j < width; j++){
+					*(bitmap_new + i*width + j) |= *(screen + (i+y/8)*LCD_H_RES + x + j);
+				}
+			}
+		} else {
+			for (int j = 0; j < width; j++){
+				*(bitmap_new + j) |= *(screen + (y/8)*LCD_H_RES + x + j) & (0b11111111 >> (8-bit));
+			}
+			for (int j = 0; j < width; j++){
+				*(bitmap_new + height*width + j) |= *(screen + (height+y/8)*LCD_H_RES + x + j) & (0b11111111 << bit);
+			}
+		}
+		for (int i = 0; i < height+1; i++){
+			memcpy(screen + (i+y/8)*LCD_H_RES + x, bitmap_new + i*width, width);
+		}
 	}
 }
+
 
 void draw_text(char *text, int x, int y, uint8_t *screen, bool transparent){
 	for (int i = 0; text[i] != '\0'; i++){

@@ -1,10 +1,12 @@
 dependencies:
   clodman84/ULGL:
-    dependencies: []
+    dependencies:
+    - name: idf
+      version: '>=5.2.0'
     source:
-      path: ../..
+      path: /home/clodman84/Documents/Programming/ULGL
       type: local
-    version: '*'
+    version: 0.0.1
   idf:
     source:
       type: idf
