@@ -18,5 +18,7 @@ void print_bitmap_in_horizontal_mode(uint8_t *bitmap, size_t sizeof_bitmap, int 
 void draw_bitmap(uint8_t *bitmap, size_t sizeof_bitmap, int width, int x, int y, uint8_t *screen, bool transparent);
 void draw_text(char *text, int x, int y, uint8_t *screen, bool transparent);  // uses a bitmap font that can be tweaked in images.h
 void draw_logo(uint8_t *screen);  // its a key rn
+void draw_pixel(int x, int y, uint8_t *screen);
+void draw_line(int x0, int y0, int x1, int y1, uint8_t *screen);
 
 #endif

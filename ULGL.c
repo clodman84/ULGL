@@ -2,6 +2,7 @@
  ULTRA Lightweight Graphics Library
 */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -98,6 +99,61 @@ void draw_text(char *text, int x, int y, uint8_t *screen, bool transparent){
 	}
 };
 
+
 void draw_logo(uint8_t *screen){
     draw_bitmap(logo, 1024, 128, (LCD_H_RES-128)/2, (LCD_V_RES-64)/2, screen, false);
+}
+
+
+void draw_pixel(int x, int y, uint8_t *screen){	
+	int page = y / 8;
+	int index = page * 128 + x;
+	int bit = y & 0b111;
+	screen[index] |= 1 << bit;
+}
+
+
+int abs(int x){
+	return x > 0 ? x:-x;
+}
+
+
+void swap(int *a, int *b) {
+	int temp = *a;
+	*a = *b;
+	*b = temp;
+}
+
+
+void draw_line(int x0, int y0, int x1, int y1, uint8_t *screen){
+        // Bresenham Algorithm from Wikipedia (not exactly but pretty much the same)
+        bool steep = false;
+        if (abs(y1-y0) > abs(x1-x0)){
+                swap(&x0, &y0);
+                swap(&x1, &y1);
+                steep = true;
+        }
+        if (x0 > x1) {
+                swap(&x0, &x1);
+                swap(&y0, &y1);
+        }
+        int yi = 1;
+        int dx = x1 - x0;
+        int dy = y1 - y0;
+        if (dy < 0){
+                yi = -1;
+                dy = -dy;
+        }
+        int D =  2*dy - dx;
+        int y = y0;
+
+        for (int x = x0; x <= x1; x++){
+                if(steep) draw_pixel(y, x, screen); 
+                else draw_pixel(x, y, screen);
+                if (D > 0){
+                        y += yi;
+                        D -= 2*dx;
+                }
+                D += 2*dy;
+        }
 }
