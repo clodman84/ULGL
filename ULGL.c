@@ -12,24 +12,37 @@
 #define LCD_H_RES             128
 #define LCD_V_RES             64
 
-void print_bitmap_in_horizontal_mode(uint8_t *screen, int height, int width){
-	// Helper function to verify the contents of a bitmap 
-	// use this with the screen array, it will output what the display is supposed to be showing rn
-	// helpful for debugging sometimes
-	for (int y = 0; y < height; y++) {
-		for (int x = 0; x < width; x++) {
-			int page = y / 8;// Determine which byte
-			int index = page * width + x;
-			int bit = y & 0b111;// Determine the bit position (equivalent to y % 8)
-			// Check if the pixel is set (1) or not (0)
-			if (screen[index] & (1 << bit)){
-				printf("#"); // Pixel is on
-			} else {
-				printf(" "); // Pixel is off
+void print_bitmap_in_horizontal_mode(uint8_t *bitmap, size_t sizeof_bitmap, int width){
+	int height = sizeof_bitmap / width;
+	for (int i = 0; i < 4*height; i++){
+		for (int j = 0; j < width/2; j++){
+			uint8_t *position = bitmap + (i/4)*width + 2*j;
+			uint8_t unwrap(uint8_t *position){
+				uint8_t temp1 = (*position     & (0b11 << (2*(i%4)))) >> (2*(i%4));
+				uint8_t temp2 = (*(position+1) & (0b11 << (2*(i%4)))) >> (2*(i%4));
+				return  (temp1 << 2) | temp2;
+			}
+			switch (unwrap(position)){
+				case 0b0000: printf(" "); break;
+				case 0b0001: printf("\xE2\x96\x9D"); break; // U+259D QUADRANT UPPER RIGHT
+				case 0b0010: printf("\xE2\x96\x97"); break; // U+2597 QUADRANT LOWER RIGHT
+				case 0b0011: printf("\xE2\x96\x90"); break; // U+2590 RIGHT HALF BLOCK
+				case 0b0100: printf("\xE2\x96\x98"); break; // U+2598 QUADRANT UPPER LEFT
+				case 0b0101: printf("\xE2\x96\x80"); break; // U+2580 UPPER HALF BLOCK
+				case 0b0110: printf("\xE2\x96\x9A"); break; // U+259A QUADRANT UPPER LEFT AND LOWER RIGHT
+				case 0b0111: printf("\xE2\x96\x9C"); break; // U+259C QUADRANT UPPER LEFT AND UPPER RIGHT AND LOWER RIGHT
+				case 0b1000: printf("\xE2\x96\x96"); break; // U+2596 QUADRANT LOWER LEFT
+				case 0b1001: printf("\xE2\x96\x9E"); break; // U+259E QUADRANT UPPER RIGHT AND LOWER LEFT
+				case 0b1010: printf("\xE2\x96\x84"); break; // U+2584 LOWER HALF BLOCK
+				case 0b1011: printf("\xE2\x96\x9F"); break; // U+259F QUADRANT UPPER RIGHT AND LOWER LEFT AND LOWER RIGHT
+				case 0b1100: printf("\xE2\x96\x8C"); break; // U+258C LEFT HALF BLOCK
+				case 0b1101: printf("\xE2\x96\x9B"); break; // U+259B QUADRANT UPPER LEFT AND UPPER RIGHT AND LOWER LEFT
+				case 0b1110: printf("\xE2\x96\x99"); break; // U+2599 QUADRANT UPPER LEFT AND LOWER LEFT AND LOWER RIGHT
+				case 0b1111: printf("\xE2\x96\x88"); break; // U+2588 FULL BLOCK
 			}
 		}
-	printf("\n"); 
-	} 
+	printf("\n");
+	}
 }
 
 void draw_bitmap(uint8_t *bitmap, size_t sizeof_bitmap, int width, int x, int y, uint8_t *screen){    // (x,y) is position of top left corner
