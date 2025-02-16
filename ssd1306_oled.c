@@ -3,7 +3,6 @@
 #include "driver/i2c_types.h"
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_panel_io.h"
-#include "esp_lcd_types.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_err.h"
 #include "esp_log.h"
@@ -11,7 +10,7 @@
 #include "freertos/idf_additions.h"
 #include "portmacro.h"
 
-#include "oled_esp_lcd.h"
+#include "ssd1306_oled.h"
 
 // make sure the pins are correctly connected here
 #define I2C_BUS_PORT          0

@@ -3,7 +3,6 @@
 */
 
 #include <stdio.h>
-#include <stdint.h>
 #include <string.h>
 #include "ULGL.h"
 #include "images.h"
@@ -45,10 +44,10 @@ void print_bitmap_in_horizontal_mode(uint8_t *bitmap, size_t sizeof_bitmap, int 
 	}
 }
 
-void draw_bitmap(uint8_t *bitmap, size_t sizeof_bitmap, int width, int x, int y, uint8_t *screen){    // (x,y) is position of top left corner
+void draw_bitmap(uint8_t *bitmap, size_t sizeof_bitmap, int width, int x, int y, uint8_t *screen, bool transparent){    // (x,y) is position of top left corner
 	int height = sizeof_bitmap / width;
-    int bit = y % 8;
-	if (bit == 0) {
+	int bit = y % 8;
+	if (bit == 0){
 	    for (int i = 0; i < height; i++){
 		    memcpy(screen + (i+y/8)*LCD_H_RES + x, bitmap + i*width, width);
 		}
@@ -60,24 +59,38 @@ void draw_bitmap(uint8_t *bitmap, size_t sizeof_bitmap, int width, int x, int y,
 	    		*(bitmap_new + i*width + j) = (*(bitmap_new + i*width + j) >> (8-bit)) | (*(bitmap_new + (i+1)*width + j) << bit);
 	    	}
 	    }
+	    if (transparent){
+	    	for (int i = 0; i < height+1; i++){
+	    		for (int j = 0; j < width; j++){
+	    			*(bitmap_new + i*width + j) |= *(screen + (i+y/8)*LCD_H_RES + x + j);
+	    		}
+	    	}
+	    } else {
+	    	for (int j = 0; j < width; j++){
+	    		*(bitmap_new + j) |= *(screen + (y/8)*LCD_H_RES + x + j) & (0b11111111 >> (8-bit));
+	    	}
+	    	for (int j = 0; j < width; j++){
+	    		*(bitmap_new + height*width + j) |= *(screen + (height+y/8)*LCD_H_RES + x + j) & (0b11111111 << bit);
+	    	}
+	    }
 	    for (int i = 0; i < height+1; i++){
 	    	memcpy(screen + (i+y/8)*LCD_H_RES + x, bitmap_new + i*width, width);
 	    }
 	}
 }
 
-void draw_text(char *text, int x, int y, uint8_t *screen){
+void draw_text(char *text, int x, int y, uint8_t *screen, bool transparent){
 	for (int i = 0; text[i] != '\0'; i++){
 		char c = text[i];
 		uint8_t* char_glyph = fontData7x8[c - 32];
 		// printf("%c\n", c);
 		// print_bitmap_in_horizontal_mode(char_glyph, 8, 7);
 		// printf("\n");
-		draw_bitmap(char_glyph, 7, 7, x, y, screen);   // the font is 7 bytes wide
+		draw_bitmap(char_glyph, 7, 7, x, y, screen, transparent);   // the font is 7 bytes wide
 		x += 7;
 	}
 };
 
 void draw_logo(uint8_t *screen){
-    draw_bitmap(logo, 1024, 128, (LCD_H_RES-128)/2, (LCD_V_RES-64)/2, screen);
+    draw_bitmap(logo, 1024, 128, (LCD_H_RES-128)/2, (LCD_V_RES-64)/2, screen, false);
 }

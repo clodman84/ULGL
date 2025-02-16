@@ -2,7 +2,7 @@ dependencies:
   clodman84/ULGL:
     dependencies: []
     source:
-      path: /home/clodman84/Documents/Programming/ULGL
+      path: ../..
       type: local
     version: '*'
   idf:
