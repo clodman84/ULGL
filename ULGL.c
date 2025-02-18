@@ -3,7 +3,6 @@
 */
 
 #include <stddef.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -12,8 +11,8 @@
 #include "images.h"
 
 // Resolution 
-#define LCD_H_RES             128
-#define LCD_V_RES             64
+#define LCD_H_RES	     128
+#define LCD_V_RES	     64
 
 
 uint8_t _unwrap(uint8_t *position, int block_x){
@@ -61,11 +60,10 @@ void draw_bitmap(uint8_t *bitmap, size_t sizeof_bitmap, int width, int x, int y,
 	memcpy(tmp, bitmap, sizeof_bitmap);
 	bitmap = tmp;
 
-	if (invert){
-		for (int i=0; i<sizeof_bitmap; i++) bitmap[i] = ~bitmap[i];
-	}
-
 	if (bit == 0){
+		if (invert){
+			for (int i=0; i<sizeof_bitmap; i++) bitmap[i] = ~bitmap[i];
+		}
 		for (int i = 0; i < height; i++){
 		    memcpy(screen + (i+y/8)*LCD_H_RES + x, bitmap + i*width, width);
 		}
@@ -91,6 +89,11 @@ void draw_bitmap(uint8_t *bitmap, size_t sizeof_bitmap, int width, int x, int y,
 				*(bitmap_new + height*width + j) |= *(screen + (height+y/8)*LCD_H_RES + x + j) & (0b11111111 << bit);
 			}
 		}
+		if (invert){
+			for (int i = 0; i < width; i++){ bitmap_new[i] ^= (0b11111111 << bit); }
+			for (int i = width; i < sizeof_bitmap; i++){ bitmap_new[i] = ~bitmap_new[i]; }
+			for (int i = sizeof_bitmap; i < sizeof_bitmap+width; i++){ bitmap_new[i] ^= (0b11111111 >> (8-bit)); }
+		}
 		for (int i = 0; i < height+1; i++){
 			memcpy(screen + (i+y/8)*LCD_H_RES + x, bitmap_new + i*width, width);
 		}
@@ -99,16 +102,33 @@ void draw_bitmap(uint8_t *bitmap, size_t sizeof_bitmap, int width, int x, int y,
 	free(bitmap);
 }
 
+int binarysearch (uint32_t c) {	// retrieves index of character
+	int i = 0, j = FONT_CHARS - 1;
+	while (i <= j) {
+		int k = i + ((j - i) / 2);
+		if (chars[k] == c) {
+			return k;
+		}
+		else if (chars[k] < c) {
+			i = k + 1;
+		}
+		else {
+			j = k - 1;
+		}
+	}
+	return -1;
+}
 
-void draw_text(char *text, int x, int y, uint8_t *screen, bool transparent, bool invert){
+void draw_text(uint32_t *text, int x, int y, uint8_t *screen, bool transparent, bool invert){
 	for (int i = 0; text[i] != '\0'; i++){
-		char c = text[i];
-		uint8_t* char_glyph = fontData7x8[c - 32];
-		// printf("%c\n", c);
-		// print_bitmap_in_horizontal_mode(char_glyph, 8, 7);
-		// printf("\n");
-		draw_bitmap(char_glyph, 7, 7, x, y, screen, transparent, invert);   // the font is 7 bytes wide
-		x += 7;
+		uint32_t c = text[i];
+		uint8_t* char_glyph = fontData5x8[binarysearch(c)];
+		draw_bitmap(char_glyph, 5, 5, x, y, screen, transparent, invert);
+		if (!transparent){
+			uint8_t line[1] = {0};
+			draw_bitmap(line, 1, 1, x+5, y, screen, false, invert);
+		}
+		x += 6;
 	}
 };
 
@@ -139,34 +159,34 @@ void swap(int *a, int *b) {
 
 
 void draw_line(int x0, int y0, int x1, int y1, uint8_t *screen){
-        // Bresenham Algorithm from Wikipedia (not exactly but pretty much the same)
-        bool steep = false;
-        if (abs(y1-y0) > abs(x1-x0)){
-                swap(&x0, &y0);
-                swap(&x1, &y1);
-                steep = true;
-        }
-        if (x0 > x1) {
-                swap(&x0, &x1);
-                swap(&y0, &y1);
-        }
-        int yi = 1;
-        int dx = x1 - x0;
-        int dy = y1 - y0;
-        if (dy < 0){
-                yi = -1;
-                dy = -dy;
-        }
-        int D =  2*dy - dx;
-        int y = y0;
+	// Bresenham Algorithm from Wikipedia (not exactly but pretty much the same)
+	bool steep = false;
+	if (abs(y1-y0) > abs(x1-x0)){
+		swap(&x0, &y0);
+		swap(&x1, &y1);
+		steep = true;
+	}
+	if (x0 > x1) {
+		swap(&x0, &x1);
+		swap(&y0, &y1);
+	}
+	int yi = 1;
+	int dx = x1 - x0;
+	int dy = y1 - y0;
+	if (dy < 0){
+		yi = -1;
+		dy = -dy;
+	}
+	int D =  2*dy - dx;
+	int y = y0;
 
-        for (int x = x0; x <= x1; x++){
-                if(steep) draw_pixel(y, x, screen); 
-                else draw_pixel(x, y, screen);
-                if (D > 0){
-                        y += yi;
-                        D -= 2*dx;
-                }
-                D += 2*dy;
-        }
+	for (int x = x0; x <= x1; x++){
+		if(steep) draw_pixel(y, x, screen);
+		else draw_pixel(x, y, screen);
+		if (D > 0){
+			y += yi;
+			D -= 2*dx;
+		}
+		D += 2*dy;
+	}
 }

@@ -4,9 +4,9 @@ dependencies:
     - name: idf
       version: '>=5.2.0'
     source:
-      path: /home/clodman84/Documents/Programming/ULGL
+      path: ../..
       type: local
-    version: 0.0.1
+    version: 0.1.1
   idf:
     source:
       type: idf
